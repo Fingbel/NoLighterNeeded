@@ -1,5 +1,5 @@
 --I Don't Need A Lighter Mod by Fingbel
-
+IDNAL_DEBUG = false
 --This function return an array(duplicate removed) of one of each of the possible smokable items
 function IDNALCheckInventoryForCigarette(player)
 	local inventoryItems = player:getInventory():getItems()
@@ -7,15 +7,12 @@ function IDNALCheckInventoryForCigarette(player)
 	
 	--Do we have smokable in our pocket
 	for i=0, inventoryItems:size()-1 do				
-		print(inventoryItems:get(i):getType())		
-
-		--Custom search for compatibility with "hydrocraft b41 continued"
-		if inventoryItems:get(i):getType() == ("HCCigar") or inventoryItems:get(i):getType() == ("HCCigarhandrolled") or inventoryItems:get(i):getType() == ("HCCigaretteslights") or inventoryItems:get(i):getType() == ("HCCigarettesmenthol") then
-			smokable[IDNALgetTableSize(smokable)] = inventoryItems:get(i)
-		end
 
 		if inventoryItems:get(i):getEatType() ==  ('Cigarettes') or inventoryItems:get(i):getEatType() == ('CigarettesOne') then			
-			smokable[IDNALgetTableSize(smokable)] = inventoryItems:get(i)			
+			if inventoryItems:get(i):getType() ~= "CigarettePack" then --We don't want packs in the list
+				smokable[IDNALgetTableSize(smokable)] = inventoryItems:get(i)		
+			end
+					
 		end	
 	end
 
@@ -26,14 +23,10 @@ function IDNALCheckInventoryForCigarette(player)
 			--We look inside each container for smokable
 			local ContainerContent = inventoryItems:get(i):getItemContainer():getItems()				
 			for i=0, ContainerContent:size()-1 do				
-				
-				--Custom search for compatibility with "hydrocraft b41 continued"
-				if ContainerContent:get(i):getType() == ("HCCigar") or ContainerContent:get(i):getType() == ("HCCigarhandrolled") or ContainerContent:get(i):getType() == ("HCCigaretteslights") or ContainerContent:get(i):getType() == ("HCCigarettesmenthol") then
-					smokable[IDNALgetTableSize(smokable)] = ContainerContent:get(i)
-				end
-
-				if ContainerContent:get(i):getEatType() ==  ('Cigarettes') or ContainerContent:get(i):getEatType() == ('CigarettesOne')  then					
-					smokable[IDNALgetTableSize(smokable)] = ContainerContent:get(i)	
+				if ContainerContent:get(i):getEatType() ==  ('Cigarettes') or ContainerContent:get(i):getEatType() == ('CigarettesOne')  then									
+					if ContainerContent:get(i):getType() ~= "CigarettePack" then --We don't want packs in the list
+						smokable[IDNALgetTableSize(smokable)] = ContainerContent:get(i)		
+					end
 				end
 			end
 		end
@@ -71,4 +64,52 @@ function IDNALgetTableSize(t)
         count = count + 1
     end
     return count
+end
+-- Détection du label localisé pour une heat source
+function IDNALGetHeatSourceLabel(heatSource)
+    if not heatSource then return nil end
+    local sq = heatSource.getSquare and heatSource:getSquare() or nil
+    if sq then
+        for i=0, sq:getObjects():size()-1 do
+            local obj = sq:getObjects():get(i)
+            if obj.getSpriteName and obj:getSpriteName() == "camping_01_5" then
+                return getText("IGUI_ContainerTitle_campfire")
+            end
+        end
+        for i=0, sq:getObjects():size()-1 do
+            local obj = sq:getObjects():get(i)
+            if obj.getObjectName then
+                local objName = obj:getObjectName()
+                IDNALDebugPrint("Heat source object name: " .. tostring(objName))
+                if objName == "Barbecue" then
+                    return getText("IGUI_ContainerTitle_barbecue")
+                elseif objName == "Stove" then
+                    return getText("IGUI_ContainerTitle_stove")                
+                elseif objName == "Fireplace" then
+                    return getText("IGUI_ContainerTitle_woodstove")
+                end
+            end
+        end
+        if sq:haveFire() then
+            return getText("IGUI_BurningTile") or "Burning Tile"
+        end
+    end
+    if heatSource.getObjectName then
+        local objName = heatSource:getObjectName()
+        if objName == "Stove" then
+            return getText("IGUI_ContainerTitle_woodstove")
+        elseif objName == "Oven" then
+            return getText("IGUI_ContainerTitle_stove")
+        elseif objName and objName ~= "" then
+            return objName
+        end
+    elseif heatSource.getName then
+        return heatSource:getName()
+    end
+    return nil
+end
+
+function IDNALDebugPrint(message)
+	if not IDNAL_DEBUG then return end
+	print("[IDNAL DEBUG] " .. tostring(message))
 end

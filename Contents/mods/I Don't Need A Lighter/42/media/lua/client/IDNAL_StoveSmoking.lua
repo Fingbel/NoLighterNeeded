@@ -1,16 +1,57 @@
---I Don't Need A Lighter Mod by Fingbel
+
+require 'client/TimedActions/IDNAL_IsStoveSmoking'
 
 local StoveSmoking = {}
 
-local function LightCigOnStove(_player, context, worldObjects, _test)
-    if _test then return true end
 
-	local player = getSpecificPlayer(_player);	
-	local smokables = IDNALCheckInventoryForCigarette(player)
-	ContextDrawing(player, context, whatIsUnderTheMouse(worldObjects, player), smokables)
+-- Utilitaires refactorisés
+function IDNALIsValidHeatSource(obj)
+	if not obj then return {valid=false} end
+	if obj:getObjectName() == "Stove" and ((SandboxVars.ElecShutModifier > -1 and getGameTime():getNightsSurvived() < SandboxVars.ElecShutModifier) or obj:getSquare():haveElectricity()) then
+		return {valid=true, duration=100}
+	elseif obj:getObjectName() == "Fireplace" and obj:isLit() then
+		return {valid=true, duration=100}
+	elseif obj:getObjectName() == "Barbecue" and obj:isLit() then
+		return {valid=true, duration=100}
+	elseif obj:getObjectName() == "IsoObject" and obj:getSpriteName() == "camping_01_5" then
+		return {valid=true, duration=120}
+	elseif obj:getSquare() and obj:getSquare():haveFire() then
+		return {valid=true, duration=10}
+	elseif instanceof(obj, 'IsoStove') and obj:isMicrowave() then
+		return {valid=true, duration=3000}
+	end
+	return {valid=false}
 end
 
-Events.OnPreFillWorldObjectContextMenu.Add(LightCigOnStove)
+local function removeSmokingMask(player)
+	local wornItems = player:getWornItems()
+	for i=0, wornItems:size()-1 do
+		local itemLocation = wornItems:get(i):getLocation()
+		if itemLocation == "MaskEyes" or itemLocation == "FullHat" or itemLocation == "Mask" then
+			local item = wornItems:get(i):getItem()
+			ISTimedActionQueue.add(ISUnequipAction:new(player, item, 50))
+			return item
+		end
+	end
+	return nil
+end
+
+local function restoreSmokingMask(player, item)
+	if item then
+		ISTimedActionQueue.add(ISWearClothing:new(player, item, 50))
+	end
+end
+
+local function startLightingAction(player, source, cigarette)
+	local heat = IDNALIsValidHeatSource(source)
+	if heat.valid then
+		ISTimedActionQueue.add(IsStoveLighting:new(player, source, cigarette, heat.duration))
+		return true
+	end
+	return false
+end
+
+
 
 --This function is responsible for the drawing of the context depending on the smokable array size
 function ContextDrawing(player, context, stove, smokables)
@@ -27,7 +68,7 @@ function ContextDrawing(player, context, stove, smokables)
 
 	--If we have only one smokable type in the array 
 	elseif IDNALgetTableSize(smokables) == 1 then
-		option = context:addOptionOnTop(getText('ContextMenu_Smoke') .."  ".. smokables[0]:getDisplayName(), player, OnStoveSmoking, stove, smokables[0])
+		option = context:addOptionOnTop(getText('ContextMenu_Smoke') .."  ".. smokables[0]:getDisplayName(), player, IDNALOnStoveSmoking, stove, smokables[0])
 	return
 	end
 
@@ -36,95 +77,66 @@ function ContextDrawing(player, context, stove, smokables)
 	local subMenu = ISContextMenu:getNew(context)
 	for i=0,IDNALgetTableSize(smokables) -1 do	
 
-		option = subMenu:addOptionOnTop(smokables[i]:getDisplayName(), player, OnStoveSmoking, stove, smokables[i])
+		option = subMenu:addOptionOnTop(smokables[i]:getDisplayName(), player, IDNALOnStoveSmoking, stove, smokables[i])
 		context:addSubMenu(smokeOption, subMenu);		
 	end
 end
 
-function whatIsUnderTheMouse ( worldObjects, playerObj)
-	for i,stove in ipairs(worldObjects) do	
-
-		--Did we click on a player ?
-		for x=stove:getSquare():getX()-1,stove:getSquare():getX()+1 do
-			for y=stove:getSquare():getY()-1,stove:getSquare():getY()+1 do
-				local sq = getCell():getGridSquare(x,y,stove:getSquare():getZ());
+local function WhatIsUnderTheMouse(worldObjects, playerObj)
+	for i, stove in ipairs(worldObjects) do
+		--Détection d'un joueur en train de fumer
+		for x = stove:getSquare():getX() - 1, stove:getSquare():getX() + 1 do
+			for y = stove:getSquare():getY() - 1, stove:getSquare():getY() + 1 do
+				local sq = getCell():getGridSquare(x, y, stove:getSquare():getZ())
 				if sq then
-					for i=0,sq:getMovingObjects():size()-1 do
-						local o = sq:getMovingObjects():get(i)
+					for j = 0, sq:getMovingObjects():size() - 1 do
+						local o = sq:getMovingObjects():get(j)
 						if instanceof(o, "IsoPlayer") and (o ~= playerObj) then
 							if string.match(o:getAnimationDebug(), "foodtype : Cigarettes") then
-							return o
+								return o
 							end
 						end
 					end
 				end
 			end
 		end
-	--did we clicked a stove/microwave?	
-		if stove:getObjectName() == ("Stove") and ((SandboxVars.ElecShutModifier > -1 and getGameTime():getNightsSurvived() < SandboxVars.ElecShutModifier) or stove:getSquare():haveElectricity()) then return stove
-	--did we clicked a lit fireplace ?
-		elseif stove:getObjectName() == ("Fireplace") and stove:isLit() then return stove										
-	--did we clicked a lit barbecue ?
-		elseif stove:getObjectName() == ("Barbecue") and stove:isLit() then return stove									
-	--did we clicked a Campfire ? We check the sprite directly to check if the campfire is lit or not
-		elseif stove:getObjectName() == ("IsoObject") and stove:getSpriteName() == "camping_01_5" then return stove						
-	--did we clicked on a Fire ? You mad man 
-		elseif stove:getSquare():haveFire() then return stove end
+		-- Utilisation de la fonction utilitaire
+		if IDNALIsValidHeatSource(stove).valid then return stove end
 	end
 end
 
-function OnStoveSmoking(_player, stove, _cigarette) 
-	ISWorldObjectContextMenu.Test = true
+local function LightCigOnStove(_player, context, worldObjects, _test)
+	if _test then return true end
+	local player = getSpecificPlayer(_player)
+	local smokables = IDNALCheckInventoryForCigarette(player)
+	ContextDrawing(player, context, WhatIsUnderTheMouse(worldObjects, player), smokables)
+end
 
-	--We need to make sure the clicked player is still smoking
+Events.OnPreFillWorldObjectContextMenu.Add(LightCigOnStove)
+
+function IDNALOnStoveSmoking(_player, stove, _cigarette)
+	-- Rendre la fonction accessible globalement (pour _G.OnStoveSmoking)
+	ISWorldObjectContextMenu.Test = true
+	-- Vérification joueur
 	if instanceof(stove, 'IsoPlayer') then
 		if not string.match(stove:getAnimationDebug(), "foodtype : Cigarettes") then return end
 	end
-
-	--Do we need to transfer cigarette from a bag first ? 
-	if luautils.walkAdj(_player, stove:getSquare(), true) then 
+	-- Transfert cigarette si besoin
+	if luautils.walkAdj(_player, stove:getSquare(), true) then
 		if _cigarette:getContainer() ~= _player:getInventory() then
-			ISTimedActionQueue.add(ISInventoryTransferAction:new (_player,  _cigarette, _cigarette:getContainer(), _player:getInventory(), 5))
+			ISTimedActionQueue.add(ISInventoryTransferAction:new(_player, _cigarette, _cigarette:getContainer(), _player:getInventory(), 5))
 		end
 	end
-
-	--Are we wearing a mask that should be preventing us from smoking ?
-	local wornItems = _player:getWornItems();
-	local itemToRemove = 0;
-	for i=0,wornItems:size() -1 do
-		local itemLocation = wornItems:get(i):getLocation()
-		if(itemLocation == "MaskEyes"  or itemLocation == "FullHat" or itemLocation == "Mask") then 			
-			itemToRemove = wornItems:get(i):getItem()
-			ISTimedActionQueue.add(ISUnequipAction:new(_player,itemToRemove,50))
-			break;
-		end				
-	end	
-		
-
-	--Let's light what we've found	
-	if luautils.walkAdj(_player, stove:getSquare(), true) then 
-		if instanceof(stove, 'IsoStove') and not stove:isMicrowave() then ISTimedActionQueue.add(IsStoveLighting:new (_player, stove, _cigarette, 100))
-		elseif instanceof(stove, 'IsoStove') and stove:isMicrowave() then ISTimedActionQueue.add(IsStoveLighting:new (_player, stove, _cigarette, 3000)) 
-		elseif instanceof(stove,'IsoFireplace') and stove:isLit() then ISTimedActionQueue.add(IsStoveLighting:new (_player, stove, _cigarette, 100)) 
-		elseif instanceof(stove,'IsoBarbecue') and stove:isLit() then ISTimedActionQueue.add(IsStoveLighting:new (_player, stove, _cigarette, 100)) 
-		elseif instanceof(stove, "IsoObject") and stove:getSpriteName() == "camping_01_5" then ISTimedActionQueue.add(IsStoveLighting:new (_player, stove, _cigarette, 120)) 
-		elseif stove:getSquare():haveFire() then ISTimedActionQueue.add(IsStoveLighting:new (_player, stove, _cigarette, 10))
-		else for i=0,stove:getSquare():getMovingObjects():size()-1 do
-				local o = stove:getSquare():getMovingObjects():get(i)
-				if instanceof(o, "IsoPlayer") and (o ~= playerObj) then
-					if string.match(o:getAnimationDebug(), "foodtype : Cigarettes") then ISTimedActionQueue.add(IsStoveLighting:new (_player, stove, _cigarette, 10)) end
-				end		
-			end
-		end
+	-- Gestion du masque
+	local removedMask = removeSmokingMask(_player)
+	-- Allumage
+	if luautils.walkAdj(_player, stove:getSquare(), true) then
+		startLightingAction(_player, stove, _cigarette)
 	end
-
-	--Now it's lit, let's smoke it
-	if luautils.walkAdj(_player, stove:getSquare(), true) then 	
+	-- Fumer
+	if luautils.walkAdj(_player, stove:getSquare(), true) then
 		ISTimedActionQueue.add(IsStoveSmoking:new(_player, stove, _cigarette, 460))
 	end
-
-	--We should put back our mask if we had one
-	if(itemToRemove ~= 0) then
-		ISTimedActionQueue.add(ISWearClothing:new(_player,itemToRemove,50))
-	end
+	-- Remettre le masque
+	restoreSmokingMask(_player, removedMask)
 end

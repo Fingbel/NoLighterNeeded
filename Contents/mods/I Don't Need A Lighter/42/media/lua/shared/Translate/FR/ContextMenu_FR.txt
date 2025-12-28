@@ -1,15 +1,8 @@
 ContextMenu_FR = {
-	ContextMenu_LightCigaretteWithOven = "Allumer une cigarette avec la gazinière"
-	ContextMenu_LightCigaretteWithFireplace = "Allumer une cigarette avec le poêle"
-	ContextMenu_LightCigaretteWithBarbecue = "Allumer une cigarette avec le barbecue"
-	ContextMenu_LightCigaretteWithCampFire = "Allumer une cigarette avec le feu de camp"
-	ContextMenu_LightCigaretteWithFire = "Allumer une cigarette avec le feu"
-	ContextMenu_StartCarSmoking = "Utiliser l'allume-cigare "
-	
 	ContextMenu_Smoke = "Fumer"
 	
 	ContextMenu_CarLighter = "Allume Cigare"
 	ContextMenu_CarOutOfCigarette = " <br> Pas de cigarette"
 	ContextMenu_CarNoBattery = "<br> Pas de batterie "
-	ContextMenu_CarNoKeyOrWire = "<br> Clés ou Fils manquants "
+	ContextMenu_CarNoKeyOrWire = "<br> ClÃ©s ou Fils manquants "
 	}
