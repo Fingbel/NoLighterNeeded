@@ -82,9 +82,7 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
         for i = 1, #context.options do
             local option = context.options[i]
             if option and option.name then
-                local name = tostring(option.name)
-                local translatedName = getText(option.name)
-                if name:find("Smoke") or (translatedName and translatedName:lower():find("smoke")) or (translatedName and translatedName:lower():find("fumer")) then
+                if option.name == getText("ContextMenu_Smoke") then
                     vanillaSmoke = option
                     break
                 end
@@ -100,7 +98,13 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
             end
         end
         context:removeOptionByName(vanillaSmoke.name)
-
+        --TEMP FIX FOR NOW LET'S CHECK IF WE CLICKED ON A PACK OF CIGARETTES OR A CIGARETTE
+        --IF A PACK IS FOUND THEN LET'S REMOVE THE SMOKE OPTION ALL TOGETHER
+        if items and #items > 0 then
+            if type(items[1]) == "table" and items[1].items then
+                if items[1].items[1]:getType() == "CigarettePack" then return end
+            end
+        end
         local optionLabel = vanillaSmoke.name
         if heatSource then
             local heatName = IDNALGetHeatSourceLabel(heatSource)
