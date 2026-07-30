@@ -66,18 +66,27 @@ function ContextDrawing(player, context, stove, smokables)
 		--foo.notAvailable = true
 		--return	
 
-	--If we have only one smokable type in the array 
+		--If we have only one smokable type in the array 
 	elseif IDNALgetTableSize(smokables) == 1 then
 		option = context:addOptionOnTop(getText('ContextMenu_Smoke') .."  ".. smokables[0]:getDisplayName(), player, IDNALOnStoveSmoking, stove, smokables[0])
+		if smokables[0].getTexture then
+			option.iconTexture = smokables[0]:getTexture()
+		end
 	return
 	end
 
-	--We have more than on type, we need to draw a sub-menu
-	local smokeOption = context:addOptionOnTop(getText('ContextMenu_Smoke'), stove, nil);		
+		--We have more than on type, we need to draw a sub-menu
+	local smokeOption = context:addOptionOnTop(getText('ContextMenu_Smoke'), stove, nil);	
+	if smokables[0] and smokables[0].getTexture then
+		smokeOption.iconTexture = smokables[0]:getTexture()
+	end	
 	local subMenu = ISContextMenu:getNew(context)
 	for i=0,IDNALgetTableSize(smokables) -1 do	
 
 		option = subMenu:addOptionOnTop(smokables[i]:getDisplayName(), player, IDNALOnStoveSmoking, stove, smokables[i])
+		if smokables[i].getTexture then
+			option.iconTexture = smokables[i]:getTexture()
+		end
 		context:addSubMenu(smokeOption, subMenu);		
 	end
 end

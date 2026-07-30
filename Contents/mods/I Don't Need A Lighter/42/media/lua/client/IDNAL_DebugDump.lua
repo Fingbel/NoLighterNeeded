@@ -60,19 +60,17 @@ local function DumpRightClick(playerIndex, context, items)
     print("--- Relevant options ---")
     for i = 1, #context.options do
         local opt = context.options[i]
-        if opt and (opt.name == "Smoke" or opt.name == "Cigarette Pack" or opt.name == "More") then
-            print("  [" .. i .. "] '" .. tostring(opt.name) .. "'")
-            DumpOption(opt, "    ")
-            -- Dump its submenu from instanceMap
-            if opt.subOption and context.instanceMap and context.instanceMap[opt.subOption] then
-                local sub = context.instanceMap[opt.subOption]
-                print("    -> subOption [" .. tostring(opt.subOption) .. "]:")
-                for si = 1, #sub.options do
-                    local sopt = sub.options[si]
-                    if sopt then
-                        print("      [" .. si .. "] '" .. tostring(sopt.name) .. "'")
-                        DumpOption(sopt, "        ")
-                    end
+        print("  [" .. i .. "] '" .. tostring(opt.name) .. "'")
+        DumpOption(opt, "    ")
+        -- Dump its submenu from instanceMap
+        if opt.subOption and context.instanceMap and context.instanceMap[opt.subOption] then
+            local sub = context.instanceMap[opt.subOption]
+            print("    -> subOption [" .. tostring(opt.subOption) .. "]:")
+            for si = 1, #sub.options do
+                local sopt = sub.options[si]
+                if sopt then
+                    print("      [" .. si .. "] '" .. tostring(sopt.name) .. "'")
+                    DumpOption(sopt, "        ")
                 end
             end
         end

@@ -205,11 +205,14 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
             notAvailable = true
         end
 
-        local customOption
+                local customOption
         if insertAfter then
             customOption = context:insertOptionAfter(insertAfter, optionLabel, nil, customFunc)
         else
             customOption = context:addOptionOnTop(optionLabel, nil, customFunc)
+        end
+        if firstItem and firstItem.getTexture then
+            customOption.iconTexture = firstItem:getTexture()
         end
         customOption.notAvailable = notAvailable
         customOption.toolTip = tooltip
