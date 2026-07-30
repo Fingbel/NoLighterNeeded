@@ -33,13 +33,13 @@ local function HasFireSource(player)
     return false
 end
 
--- Recherche d'une source de chaleur autour du joueur (rayon 4)
+-- Recherche d'une source de chaleur autour du joueur (rayon 2)
 local function FindNearbyHeatSource(player)
     local square = player:getSquare()
     if not square then return nil end
     local playerIsOutside = player:isOutside() or (square.isOutside and square:isOutside())
-    for dx = -4, 4 do
-        for dy = -4, 4 do
+    for dx = -2, 2 do
+        for dy = -2, 2 do
             local sq = getCell():getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
             if sq then
                 local sqIsOutside = sq.isOutside and sq:isOutside()
@@ -64,10 +64,31 @@ local function FindNearbyHeatSource(player)
 end
 
 
+local function GetFirstItem(items)
+    if not items or #items == 0 then return nil end
+    local entry = items[1]
+    if type(entry) == "table" and entry.items then
+        return entry.items[1]
+    end
+    return entry
+end
+
+local function IsSmokable(item)
+    if not item then return false end
+    local ok, eatType = pcall(function() return item:getEatType() end)
+    if not ok then return false end
+    return eatType == "Cigarettes" or eatType == "CigarettesOne"
+end
+
 local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
     if not context or not context.options then return end
     local player = getSpecificPlayer(playerIndex)
     if not player then return end
+
+    -- Only handle smokable items (cigarettes, cigarillos, etc.)
+    -- This avoids issues with Turkish where "Smoke" and "Drink" share the same translation "İç"
+    local firstItem = GetFirstItem(items)
+    if not IsSmokable(firstItem) then return end
 
     local hasFireSource = HasFireSource(player)
     local heatSource = nil
@@ -75,10 +96,10 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
         heatSource = FindNearbyHeatSource(player)
     end
 
-    -- Suppression propre de l'option vanilla "Smoke"
-    local vanillaSmoke = context:getOptionFromName("Smoke")
+    -- Find the "Smoke" option by localized name (safe now since we confirmed it's a smokable item)
+    local vanillaSmoke = context:getOptionFromName(getText("ContextMenu_Smoke"))
     if not vanillaSmoke then
-        -- fallback : recherche par traduction ou nom approché
+        -- fallback: scan all options for the translated name
         for i = 1, #context.options do
             local option = context.options[i]
             if option and option.name then
@@ -99,19 +120,14 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
         end
         context:removeOptionByName(vanillaSmoke.name)
         
-        --TEMP FIX FOR NOW LET'S CHECK IF WE CLICKED ON A PACK OF CIGARETTES OR A CIGARETTE
-        --IF A PACK IS FOUND THEN LET'S REMOVE THE SMOKE OPTION ALL TOGETHER
-        if items and #items > 0 then
-            if type(items[1]) == "table" and items[1].items then
-                if items[1].items[1]:getType() == "CigarettePack" then return end
-            end
-        end
+        --TEMP FIX: Skip CigarettePack for now (need to handle taking one out first)
+        if firstItem:getType() == "CigarettePack" then return end
         --END TEMP FIX
 
-        local optionLabel = vanillaSmoke.name
+                local optionLabel = getText('ContextMenu_Smoke')
         if heatSource then
             local heatName = IDNALGetHeatSourceLabel(heatSource)
-            optionLabel = getText('ContextMenu_Smoke') .. " (" .. tostring(heatName) .. ")"
+            optionLabel = optionLabel .. " (" .. tostring(heatName) .. ")"
         elseif hasFireSource then
             -- Chercher le nom de la source de feu utilisée (ex : "Lighter", "Matches")
             local fireSourceName = nil

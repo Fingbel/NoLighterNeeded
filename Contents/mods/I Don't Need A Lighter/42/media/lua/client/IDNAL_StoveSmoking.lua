@@ -1,4 +1,4 @@
-
+require 'client/TimedActions/IDNAL_IsStoveLighting'
 require 'client/TimedActions/IDNAL_IsStoveSmoking'
 
 local StoveSmoking = {}

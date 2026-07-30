@@ -1,5 +1,5 @@
 --I Don't Need A Lighter Mod by Fingbel
-IDNAL_DEBUG = false
+IDNAL_DEBUG = true
 --This function return an array(duplicate removed) of one of each of the possible smokable items
 function IDNALCheckInventoryForCigarette(player)
 	local inventoryItems = player:getInventory():getItems()
