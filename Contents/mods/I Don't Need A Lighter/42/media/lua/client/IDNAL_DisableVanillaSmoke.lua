@@ -119,12 +119,8 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
             end
         end
         context:removeOptionByName(vanillaSmoke.name)
-        
-        --TEMP FIX: Skip CigarettePack for now (need to handle taking one out first)
-        if firstItem:getType() == "CigarettePack" then return end
-        --END TEMP FIX
 
-                local optionLabel = getText('ContextMenu_Smoke')
+        local optionLabel = getText('ContextMenu_Smoke')
         if heatSource then
             local heatName = IDNALGetHeatSourceLabel(heatSource)
             optionLabel = optionLabel .. " (" .. tostring(heatName) .. ")"
@@ -160,7 +156,7 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
         end
 
         local customFunc, tooltip, notAvailable
-        if heatSource then
+                                if heatSource then
             customFunc = function()
                 local smokable = nil
                 if items and #items > 0 then
@@ -171,7 +167,15 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
                     end
                 end
                 if not player or not heatSource or not smokable then return end
-                IDNALOnStoveSmoking(player, heatSource, smokable)
+                
+                if smokable:getType() == "CigarettePack" then
+                    -- Run vanilla "Take Cigarette" recipe, then queue smoking pipeline
+                    if smokable:getCurrentUses() and smokable:getCurrentUses() > 0 then                        
+                        ISTimedActionQueue.add(IDNALTakeCigarette:new(player,heatSource,smokable, 15))
+                    end
+                else
+                    IDNALOnStoveSmoking(player, heatSource, smokable)
+                end
             end
             tooltip = nil
             notAvailable = false
