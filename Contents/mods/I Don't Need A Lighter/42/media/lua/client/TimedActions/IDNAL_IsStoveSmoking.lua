@@ -25,6 +25,7 @@ function IsStoveSmoking:start()
 	self:setAnimVariable("FoodType", self.item:getEatType());
 	self.item:setJobDelta(0.0);
 
+	self:setOverrideHandModels(nil, self.item);
 	self:setActionAnim("Eat");
 	
 	--TODO : Add an option to allow the automatic turn off of self.stove after the animation started
@@ -62,7 +63,7 @@ function IsStoveSmoking:new (character, worldobject, item, time)
 	o.character = character;
 	o.stats = character:getStats();
 	o.worldobject = worldobject;
-	o.item = item;
+	o.item = item;	
 	o.maxTime = time;
 	o.eatAudio = 0
 	 o.eatSound = item:getCustomEatSound() or "Eating";

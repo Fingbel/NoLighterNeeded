@@ -83,7 +83,7 @@ local function IsSmokable(item)
     if not item then return false end
     local ok, eatType = pcall(function() return item:getEatType() end)
     if not ok then return false end
-    return eatType == "Cigarettes" or eatType == "CigarettesOne"
+    return eatType == "Cigarettes" or eatType == "CigarettesOne" or eatType == "Pipe"
 end
 
 local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
