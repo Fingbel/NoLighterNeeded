@@ -6,21 +6,21 @@ local StoveSmoking = {}
 
 -- Utilitaires refactorisés
 function IDNALIsValidHeatSource(obj)
-	if not obj then return {valid=false} end
-	if obj:getObjectName() == "Stove" and ((SandboxVars.ElecShutModifier > -1 and getGameTime():getNightsSurvived() < SandboxVars.ElecShutModifier) or obj:getSquare():haveElectricity()) then
-		return {valid=true, duration=100}
+	if not obj then return {valid=false, priority=99} end
+	if obj:getObjectName() == "Stove" and not (instanceof(obj, 'IsoStove') and obj:isMicrowave()) and ((SandboxVars.ElecShutModifier > -1 and getGameTime():getNightsSurvived() < SandboxVars.ElecShutModifier) or obj:getSquare():haveElectricity()) then
+		return {valid=true, duration=100, priority=1}
 	elseif obj:getObjectName() == "Fireplace" and obj:isLit() then
-		return {valid=true, duration=100}
+		return {valid=true, duration=100, priority=2}
 	elseif obj:getObjectName() == "Barbecue" and obj:isLit() then
-		return {valid=true, duration=100}
+		return {valid=true, duration=100, priority=3}
 	elseif obj:getObjectName() == "IsoObject" and obj:getSpriteName() == "camping_01_5" then
-		return {valid=true, duration=120}
+		return {valid=true, duration=120, priority=4}
 	elseif obj:getSquare() and obj:getSquare():haveFire() then
-		return {valid=true, duration=10}
-	elseif instanceof(obj, 'IsoStove') and obj:isMicrowave() then
-		return {valid=true, duration=3000}
+		return {valid=true, duration=10, priority=5}
+	elseif instanceof(obj, 'IsoStove') and obj:isMicrowave() and ((SandboxVars.ElecShutModifier > -1 and getGameTime():getNightsSurvived() < SandboxVars.ElecShutModifier) or obj:getSquare():haveElectricity()) then
+		return {valid=true, duration=3000, priority=6}
 	end
-	return {valid=false}
+	return {valid=false, priority=99}
 end
 
 local function removeSmokingMask(player)
@@ -92,6 +92,8 @@ function ContextDrawing(player, context, stove, smokables)
 end
 
 local function WhatIsUnderTheMouse(worldObjects, playerObj)
+	local bestStove = nil
+	local bestPriority = 99
 	for i, stove in ipairs(worldObjects) do
 		--Détection d'un joueur en train de fumer
 		for x = stove:getSquare():getX() - 1, stove:getSquare():getX() + 1 do
@@ -109,9 +111,14 @@ local function WhatIsUnderTheMouse(worldObjects, playerObj)
 				end
 			end
 		end
-		-- Utilisation de la fonction utilitaire
-		if IDNALIsValidHeatSource(stove).valid then return stove end
+		-- Utilisation de la fonction utilitaire avec priorité
+		local result = IDNALIsValidHeatSource(stove)
+		if result.valid and result.priority < bestPriority then
+			bestStove = stove
+			bestPriority = result.priority
+		end
 	end
+	return bestStove
 end
 
 local function LightCigOnStove(_player, context, worldObjects, _test)

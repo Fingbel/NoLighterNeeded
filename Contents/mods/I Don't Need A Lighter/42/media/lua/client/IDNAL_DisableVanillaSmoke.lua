@@ -38,6 +38,8 @@ local function FindNearbyHeatSource(player)
     local square = player:getSquare()
     if not square then return nil end
     local playerIsOutside = player:isOutside() or (square.isOutside and square:isOutside())
+    local bestObj = nil
+    local bestPriority = 99
     for dx = -2, 2 do
         for dy = -2, 2 do
             local sq = getCell():getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
@@ -52,15 +54,19 @@ local function FindNearbyHeatSource(player)
                 if valid then
                     for i = 0, sq:getObjects():size() - 1 do
                         local obj = sq:getObjects():get(i)
-                        if IDNALIsValidHeatSource and IDNALIsValidHeatSource(obj).valid then
-                            return obj
+                        if IDNALIsValidHeatSource then
+                            local result = IDNALIsValidHeatSource(obj)
+                            if result.valid and result.priority < bestPriority then
+                                bestObj = obj
+                                bestPriority = result.priority
+                            end
                         end
                     end
                 end
             end
         end
     end
-    return nil
+    return bestObj
 end
 
 
