@@ -1,0 +1,6 @@
+{
+	"ContextMenu_CarLighter" : "Auto Feuerzeug",
+	"ContextMenu_CarOutOfCigarette" : " <br> Nichts zu rauchen",
+	"ContextMenu_CarNoBattery" : "<br> Batterie ist leer oder fehlt ",
+	"ContextMenu_CarNoKeyOrWire" : "<br> Schlüssel oder Kabel fehlen"
+	}

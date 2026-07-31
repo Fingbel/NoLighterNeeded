@@ -1,8 +1,0 @@
-ContextMenu_IT = {
-	ContextMenu_Smoke = "Fumare"
-	
-	ContextMenu_CarLighter = "Accendisigari"
-	ContextMenu_CarOutOfCigarette = " <br> Niente da fumare"
-	ContextMenu_CarNoBattery = "<br> La batteria è <br>scarica o mancante "
-	ContextMenu_CarNoKeyOrWire = "<br> Chiave o <br>filo mancanti"	
-	}

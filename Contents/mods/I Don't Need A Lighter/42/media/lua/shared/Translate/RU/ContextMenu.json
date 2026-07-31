@@ -1,0 +1,6 @@
+{	
+	"ContextMenu_CarLighter" : "Автомобильная зажигалка",
+	"ContextMenu_CarOutOfCigarette" : " <br> Нечего курить",
+	"ContextMenu_CarNoBattery" : "<br> Батарея разряжена или отсутствует ",
+	"ContextMenu_CarNoKeyOrWire" : "<br> Отсутствует ключ или провод"
+}

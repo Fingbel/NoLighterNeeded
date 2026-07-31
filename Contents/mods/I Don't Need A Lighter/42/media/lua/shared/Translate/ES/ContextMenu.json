@@ -1,0 +1,6 @@
+{
+	"ContextMenu_CarLighter" : "encendedor de coche",
+	"ContextMenu_CarOutOfCigarette" : " <br> nada para fumar",
+	"ContextMenu_CarNoBattery" : "<br> La batería está agotada o falta",
+	"ContextMenu_CarNoKeyOrWire" : "<br> Falta la llave o el cable"
+	}

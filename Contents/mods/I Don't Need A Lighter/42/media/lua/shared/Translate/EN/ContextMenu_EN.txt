@@ -1,9 +1,0 @@
-ContextMenu_EN = {
-	
-	ContextMenu_Smoke = "Smoke"
-	
-	ContextMenu_CarLighter = "Car Lighter"
-	ContextMenu_CarOutOfCigarette = " <br> Nothing to smoke"
-	ContextMenu_CarNoBattery = "<br> Battery is out or missing "
-	ContextMenu_CarNoKeyOrWire = "<br> Key or wire missing"
-	}

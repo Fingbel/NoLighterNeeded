@@ -1,0 +1,6 @@
+﻿{
+	"ContextMenu_CarLighter" : "點菸器",
+	"ContextMenu_CarOutOfCigarette" : "<br> 沒菸了",
+	"ContextMenu_CarNoBattery" : "<br> 電池遺失或沒電",
+	"ContextMenu_CarNoKeyOrWire" : "<br> 車輛沒有通電" 
+}

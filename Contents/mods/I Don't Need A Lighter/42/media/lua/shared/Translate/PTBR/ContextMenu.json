@@ -1,0 +1,6 @@
+{
+    "ContextMenu_CarLighter" : "Car Lighter",
+    "ContextMenu_CarOutOfCigarette" : " <br> Nada para fumar",
+    "ContextMenu_CarNoBattery" : "<br> Problema de bateria",
+    "ContextMenu_CarNoKeyOrWire" : "<br> Chave ou fio ausente"
+}
