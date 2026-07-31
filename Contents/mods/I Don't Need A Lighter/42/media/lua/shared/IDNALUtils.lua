@@ -8,12 +8,12 @@ function IDNALCheckInventoryForCigarette(player)
 	--Do we have smokable in our pocket
 	for i=0, inventoryItems:size()-1 do				
 
-		if inventoryItems:get(i):getEatType() ==  ('Cigarettes') or inventoryItems:get(i):getEatType() == ('CigarettesOne') then			
+        if IDNALIsSmokable(inventoryItems:get(i)) then
 			if inventoryItems:get(i):getType() ~= "CigarettePack" then --We don't want packs in the list
 				smokable[IDNALgetTableSize(smokable)] = inventoryItems:get(i)		
 			end
 					
-		end	
+		end		
 	end
 
 	--Now we look for container to search inside
@@ -23,7 +23,7 @@ function IDNALCheckInventoryForCigarette(player)
 			--We look inside each container for smokable
 			local ContainerContent = inventoryItems:get(i):getItemContainer():getItems()				
 			for i=0, ContainerContent:size()-1 do				
-				if ContainerContent:get(i):getEatType() ==  ('Cigarettes') or ContainerContent:get(i):getEatType() == ('CigarettesOne')  then									
+                if IDNALIsSmokable(ContainerContent:get(i)) then
 					if ContainerContent:get(i):getType() ~= "CigarettePack" then --We don't want packs in the list
 						smokable[IDNALgetTableSize(smokable)] = ContainerContent:get(i)		
 					end
@@ -35,6 +35,15 @@ function IDNALCheckInventoryForCigarette(player)
 	return IDNALremoveDuplicates(smokable)
 end
 
+
+
+-- Checks if an item can be smoked (cigarettes, single cigarettes, pipes, etc.)
+function IDNALIsSmokable(item)
+	if not item then return false end
+	local ok, eatType = pcall(function() return item:getEatType() end)
+	if not ok then return false end
+	return eatType == "Cigarettes" or eatType == "CigarettesOne" or eatType == "Pipe"
+end
 
 
 --Utility functions

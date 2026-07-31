@@ -79,13 +79,6 @@ local function GetFirstItem(items)
     return entry
 end
 
-local function IsSmokable(item)
-    if not item then return false end
-    local ok, eatType = pcall(function() return item:getEatType() end)
-    if not ok then return false end
-    return eatType == "Cigarettes" or eatType == "CigarettesOne" or eatType == "Pipe"
-end
-
 local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
     if not context or not context.options then return end
     local player = getSpecificPlayer(playerIndex)
@@ -94,7 +87,7 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
     -- Only handle smokable items (cigarettes, cigarillos, etc.)
     -- This avoids issues with Turkish where "Smoke" and "Drink" share the same translation "İç"
     local firstItem = GetFirstItem(items)
-    if not IsSmokable(firstItem) then return end
+    if not IDNALIsSmokable(firstItem) then return end
 
     local hasFireSource = HasFireSource(player)
     local heatSource = nil
