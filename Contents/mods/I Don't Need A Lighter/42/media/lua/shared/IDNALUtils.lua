@@ -81,9 +81,12 @@ function IDNALGetHeatSourceLabel(heatSource)
             if obj.getObjectName then
                 local objName = obj:getObjectName()
                 IDNALDebugPrint("Heat source object name: " .. tostring(objName))
-                if objName == "Barbecue" then
+                                if objName == "Barbecue" then
                     return getText("IGUI_ContainerTitle_barbecue")
                 elseif objName == "Stove" then
+                    if obj.isMicrowave and obj:isMicrowave() then
+                        return getText("IGUI_ContainerTitle_microwave")
+                    end
                     return getText("IGUI_ContainerTitle_stove")                
                 elseif objName == "Fireplace" then
                     return getText("IGUI_ContainerTitle_woodstove")
@@ -94,9 +97,12 @@ function IDNALGetHeatSourceLabel(heatSource)
             return getText("IGUI_BurningTile") or "Burning Tile"
         end
     end
-    if heatSource.getObjectName then
+        if heatSource.getObjectName then
         local objName = heatSource:getObjectName()
         if objName == "Stove" then
+            if heatSource.isMicrowave and heatSource:isMicrowave() then
+                return getText("IGUI_ContainerTitle_microwave")
+            end
             return getText("IGUI_ContainerTitle_woodstove")
         elseif objName == "Oven" then
             return getText("IGUI_ContainerTitle_stove")

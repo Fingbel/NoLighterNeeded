@@ -23,10 +23,15 @@ function IsStoveLighting:start()
 	self.item:setRequireInHandOrInventory(nil)
 	if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
-			self.stove:Toggle() 
+			self.stove:Toggle()
+			if self.stove:isMicrowave() then
+				self.stove:setTimer(2000) -- Keep it on for 10 seconds to outlast our lighting action
+			end
 		end
 	end
 end
+
+
 
 function IsStoveLighting:stop()
 	--StopTimeBasedAction
