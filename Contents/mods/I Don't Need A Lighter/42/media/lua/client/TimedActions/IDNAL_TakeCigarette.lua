@@ -39,17 +39,22 @@ function IDNALTakeCigarette:perform()
     local singleCig = self.character:getInventory():AddItem("Base.CigaretteSingle")
     
     -- Queue the smoking pipeline (runs after this action is fully done)
-    if singleCig and self.heatSource then
-        IDNALOnStoveSmoking(self.character, self.heatSource, singleCig)
+    if singleCig then
+        if self.useCar then
+            OnCarSmoking(self.character, singleCig)
+        elseif self.heatSource then
+            IDNALOnStoveSmoking(self.character, self.heatSource, singleCig)
+        end
     end
 end
 
-function IDNALTakeCigarette:new(character, heatSource, pack, time)
+function IDNALTakeCigarette:new(character, heatSource, pack, time, useCar)
     local o = {}
     setmetatable(o, self)
     self.__index = self
     o.character = character
     o.heatSource = heatSource  -- Fixed: uppercase S to match self.heatSource
+    o.useCar = useCar or false
     o.pack = pack
     o.maxTime = time or 15
     o.stopOnWalk = false

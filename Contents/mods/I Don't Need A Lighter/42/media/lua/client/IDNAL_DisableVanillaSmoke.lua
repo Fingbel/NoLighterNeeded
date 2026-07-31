@@ -89,10 +89,20 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
     local firstItem = GetFirstItem(items)
     if not IDNALIsSmokable(firstItem) then return end
 
+   
     local hasFireSource = HasFireSource(player)
     local heatSource = nil
     if _G.IDNALIsValidHeatSource then
         heatSource = FindNearbyHeatSource(player)
+    end
+    -- Can we smoke with the car's cigarette lighter? (must be in a front seat with power & ignition)
+    local canUseCarLighter = false
+    local vehicle = player:getVehicle()
+    if vehicle then
+        local seat = vehicle:getSeat(player)
+        if (seat == 0 or seat == 1) and vehicle:getBatteryCharge() > 0 and (vehicle:isHotwired() or vehicle:isKeysInIgnition()) then
+            canUseCarLighter = true
+        end
     end
 
     -- Find the "Smoke" option by localized name (safe now since we confirmed it's a smokable item)
@@ -119,8 +129,10 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
         end
         context:removeOptionByName(vanillaSmoke.name)
 
-        local optionLabel = getText('ContextMenu_Smoke')
-        if heatSource then
+                local optionLabel = getText('ContextMenu_Smoke')
+        if canUseCarLighter then
+            optionLabel = optionLabel .. " (" .. getText('ContextMenu_CarLighter') .. ")"
+        elseif heatSource then
             local heatName = IDNALGetHeatSourceLabel(heatSource)
             optionLabel = optionLabel .. " (" .. tostring(heatName) .. ")"
         elseif hasFireSource then
@@ -155,7 +167,30 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
         end
 
         local customFunc, tooltip, notAvailable
-                                if heatSource then
+        if canUseCarLighter then
+            customFunc = function()
+                local smokable = nil
+                if items and #items > 0 then
+                    if type(items[1]) == "table" and items[1].items then
+                        smokable = items[1].items[1]
+                    else
+                        smokable = items[1]
+                    end
+                end
+                if not player or not smokable then return end
+
+                if smokable:getType() == "CigarettePack" then
+                    -- Take one cigarette from the pack, then smoke it with the car lighter
+                    if smokable:getCurrentUses() and smokable:getCurrentUses() > 0 then
+                        ISTimedActionQueue.add(IDNALTakeCigarette:new(player, nil, smokable, 15, true))
+                    end
+                else
+                    OnCarSmoking(player, smokable)
+                end
+            end
+            tooltip = nil
+            notAvailable = false
+        elseif heatSource then
             customFunc = function()
                 local smokable = nil
                 if items and #items > 0 then
