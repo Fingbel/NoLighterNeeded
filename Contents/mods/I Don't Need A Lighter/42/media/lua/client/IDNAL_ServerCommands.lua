@@ -61,18 +61,25 @@ local function OnServerCommand(module, command, args)
     if not player then return end
 
     if not TryStartSmokingSequence(player, args) then
-        -- The container sync may lag slightly behind the command: retry a few times.
+        -- The container sync may lag slightly behind the command: retry each tick
+        -- until the cigarette shows up. (Events.OnTick is a real PZ event, so it
+        -- also keeps the Umbrella/EmmyLUA type-check clean, unlike addTickTimer.)
+        -- In multiplayer the item-add packet and the command are separate UDP
+        -- packets, so allow several seconds of latency (60 ticks = 1s).
         local retries = 0
+        local maxRetries = 300 -- up to ~5s
         local function retry()
-            if TryStartSmokingSequence(player, args) then return end
+            if TryStartSmokingSequence(player, args) then
+                Events.OnTick.Remove(retry)
+                return
+            end
             retries = retries + 1
-            if retries < 10 then
-                addTickTimer(5, retry)
-            else
+            if retries >= maxRetries then
+                Events.OnTick.Remove(retry)
                 IDNALDebugPrint("Could not find spawned cigarette after retries")
             end
         end
-        addTickTimer(5, retry)
+        Events.OnTick.Add(retry)
     end
 end
 Events.OnServerCommand.Add(OnServerCommand)
