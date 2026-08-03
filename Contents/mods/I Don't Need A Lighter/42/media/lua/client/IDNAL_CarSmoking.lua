@@ -98,9 +98,9 @@ function OnCarSmoking(_player, _cigarette)
 		ISTimedActionQueue.add(ISInventoryTransferAction:new (_player,  _cigarette, _cigarette:getContainer(), _player:getInventory(), 5))
 	end
 
-	--We need some time for the lighter to heat
-	ISTimedActionQueue.add(IsCarLighting:new (_player, _cigarette, 300))
+		--We need some time for the lighter to heat
+	ISTimedActionQueue.add(IsCarLighting:new (_player, _cigarette))
 	
 	--Let's smoke now
-	ISTimedActionQueue.add(IsCarSmoking:new(_player, _cigarette, 460))
+	ISTimedActionQueue.add(IsCarSmoking:new(_player, _cigarette))
 end

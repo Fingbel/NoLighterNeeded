@@ -15,6 +15,13 @@ function IsStoveSmoking:update()
 	
 end
 
+function IsStoveSmoking:getDuration()
+	if self.character:isTimedActionInstant() then
+		return 1;
+	end
+	return 460; -- 4.6 seconds (1s = 50 cycles)
+end
+
 function IsStoveSmoking:start()
 	
 	--This bypass the lighter durability drainage
@@ -48,30 +55,27 @@ function IsStoveSmoking:perform()
 	--Reset Progress Bar
 	self.item:setJobDelta(0.0);
 	
-	--Eat the cigarette
-	self.character:Eat(self.item, 1)
-		
 	--FinishTimeBasedAction
 	ISBaseTimedAction.perform(self)
 	
 end
 
-function IsStoveSmoking:new (character, worldobject, item, time)
-	local o = {}
-	setmetatable(o, self)
-	self.__index = self
-	o.character = character;
+function IsStoveSmoking:complete()
+	--Consume the cigarette and apply its effects (server / single-player)
+	self.character:Eat(self.item, 1)
+	return true
+end
+
+function IsStoveSmoking:new (character, worldobject, item)
+	local o = ISBaseTimedAction.new(self, character)
 	o.stats = character:getStats();
 	o.worldobject = worldobject;
 	o.item = item;	
-	o.maxTime = time;
+	o.maxTime = o:getDuration();
 	o.eatAudio = 0
 	 o.eatSound = item:getCustomEatSound() or "Eating";
 	o.eatType = 'cigarette'
 	o.stopOnWalk = false;
 	o.stopOnRun = true;
-	if character:isTimedActionInstant() then
-		o.maxTime = 1;
-	end
 	return o
 end

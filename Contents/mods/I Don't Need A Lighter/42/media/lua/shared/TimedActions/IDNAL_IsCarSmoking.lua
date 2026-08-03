@@ -18,6 +18,13 @@ function IsCarSmoking:update()
      end
 end
 
+function IsCarSmoking:getDuration()
+	if self.character:isTimedActionInstant() then
+		return 1;
+	end
+	return 460; -- 4.6 seconds (1s = 50 cycles)
+end
+
 function IsCarSmoking:start()
 	--This bypass the lighter durability drainage
 	self.item:setRequireInHandOrInventory(nil)
@@ -28,6 +35,10 @@ function IsCarSmoking:start()
 	end
 	self.item:setJobDelta(0.0);
 	
+	--Animation (client side; Eat() now only runs in complete() on the server)
+	self:setAnimVariable("FoodType", self.item:getEatType());
+	self:setOverrideHandModels(nil, self.item);
+	self:setActionAnim("Eat");
 	end
 
 function IsCarSmoking:stop()
@@ -50,26 +61,24 @@ function IsCarSmoking:perform()
         self.character:stopOrTriggerSound(self.eatAudio);
     end
 	
-	--Reset Progress Bar
+		--Reset Progress Bar
 	self.item:setJobDelta(0.0);
-	self.character:Eat(self.item, 1)
-	
+
 	--FinishTimeBasedAction
 	ISBaseTimedAction.perform(self)
-	
 end
 
-function IsCarSmoking:new (character, item, time)
-	local o = {}
-	setmetatable(o, self)
-	self.__index = self
-	o.character = character;
+function IsCarSmoking:complete()
+	--Consume the cigarette and apply its effects (server / single-player)
+	self.character:Eat(self.item, 1)
+	return true
+end
+
+function IsCarSmoking:new (character, item)
+	local o = ISBaseTimedAction.new(self, character)
 	o.item = item;
-	o.maxTime = time;
+	o.maxTime = o:getDuration();
 	o.eatSound ="Smoke";
 	o.eatAudio = 0;
-	if character:isTimedActionInstant() then
-		o.maxTime = 1;
-	end
 	return o
 end

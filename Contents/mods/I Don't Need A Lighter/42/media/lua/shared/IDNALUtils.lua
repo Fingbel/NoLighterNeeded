@@ -1,5 +1,5 @@
 --I Don't Need A Lighter Mod by Fingbel
-IDNAL_DEBUG = true
+IDNAL_DEBUG = false
 --This function return an array(duplicate removed) of one of each of the possible smokable items
 function IDNALCheckInventoryForCigarette(player)
 	local inventoryItems = player:getInventory():getItems()
@@ -127,4 +127,33 @@ end
 function IDNALDebugPrint(message)
 	if not IDNAL_DEBUG then return end
 	print("[IDNAL DEBUG] " .. tostring(message))
+end
+
+-- Détection d'une source de chaleur valide (shared: loaded on client AND server)
+-- Durations are in cycles (1s = 50 cycles) for use by getDuration()
+function IDNALIsValidHeatSource(obj)
+	if not obj then return {valid=false, priority=99} end
+	-- B42-safe electricity check
+	local powered = false
+	local ok, modifier = pcall(function() return SandboxVars.ElecShutModifier end)
+	if ok and modifier ~= nil then
+		powered = modifier > -1 and getGameTime():getNightsSurvived() < modifier
+	end
+	if not powered and obj:getSquare() then
+		powered = obj:getSquare():haveElectricity()
+	end
+	if obj:getObjectName() == "Stove" and not (instanceof(obj, 'IsoStove') and obj:isMicrowave()) and powered then
+		return {valid=true, duration=150, priority=1} -- 1 second
+	elseif obj:getObjectName() == "Fireplace" and obj:isLit() then
+		return {valid=true, duration=150, priority=2}
+	elseif obj:getObjectName() == "Barbecue" and obj:isLit() then
+		return {valid=true, duration=150, priority=3}
+	elseif obj:getObjectName() == "IsoObject" and obj:getSpriteName() == "camping_01_5" then
+		return {valid=true, duration=170, priority=4}
+	elseif obj:getSquare() and obj:getSquare():haveFire() then
+		return {valid=true, duration=10 , priority=5}
+	elseif instanceof(obj, 'IsoStove') and obj:isMicrowave() and powered then
+		return {valid=true, duration=1500, priority=6} -- 30 seconds
+	end
+	return {valid=false, priority=99}
 end

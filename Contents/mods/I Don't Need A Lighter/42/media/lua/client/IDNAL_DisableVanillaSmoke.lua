@@ -182,7 +182,7 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
                 if smokable:getType() == "CigarettePack" then
                     -- Take one cigarette from the pack, then smoke it with the car lighter
                     if smokable:getCurrentUses() and smokable:getCurrentUses() > 0 then
-                        ISTimedActionQueue.add(IDNALTakeCigarette:new(player, nil, smokable, 15, true))
+                        ISTimedActionQueue.add(IDNALTakeCigarette:new(player, nil, smokable, true))
                     end
                 else
                     OnCarSmoking(player, smokable)
@@ -205,7 +205,7 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
                 if smokable:getType() == "CigarettePack" then
                     -- Run vanilla "Take Cigarette" recipe, then queue smoking pipeline
                     if smokable:getCurrentUses() and smokable:getCurrentUses() > 0 then                        
-                        ISTimedActionQueue.add(IDNALTakeCigarette:new(player,heatSource,smokable, 15))
+                        ISTimedActionQueue.add(IDNALTakeCigarette:new(player,heatSource,smokable))
                     end
                 else
                     IDNALOnStoveSmoking(player, heatSource, smokable)

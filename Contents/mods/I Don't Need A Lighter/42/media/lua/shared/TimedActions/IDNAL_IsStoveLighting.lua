@@ -16,6 +16,19 @@ function IsStoveLighting:waitToStart()
 	return self.character:shouldBeTurning()
 end
 
+function IsStoveLighting:getDuration()
+	if self.character:isTimedActionInstant() then
+		return 1;
+	end
+	if IDNALIsValidHeatSource then
+		local heat = IDNALIsValidHeatSource(self.stove)
+		if heat and heat.valid then
+			return heat.duration
+		end
+	end
+	return 50;
+end
+
 function IsStoveLighting:start()
 	self:setActionAnim("Craft");
 	--This bypass the lighter durability drainage
@@ -45,28 +58,27 @@ end
 
 
 function IsStoveLighting:perform()
+	--FinishTimeBasedAction
 	if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
-			self.stove:Toggle() 
+			self.stove:Toggle()
 		end
 	end
-	--FinishTimeBasedAction
 	ISBaseTimedAction.perform(self)
 end
 
-function IsStoveLighting:new (character, stove, item, time)
-	local o = {}
-	setmetatable(o, self)
-	self.__index = self
-	o.character = character;
+function IsStoveLighting:complete()
+	--Restore the stove to its initial state (server / single-player)	
+	return true
+end
+
+function IsStoveLighting:new (character, stove, item)
+	local o = ISBaseTimedAction.new(self, character)
 	o.stove = stove
 	o.item = item;
-	o.maxTime = time;
 	if instanceof(stove,'IsoStove') then
 		o.initialState = stove:Activated()
 	end
-	if character:isTimedActionInstant() then
-		o.maxTime = 1;
-	end
+	o.maxTime = o:getDuration();
 	return o
 end

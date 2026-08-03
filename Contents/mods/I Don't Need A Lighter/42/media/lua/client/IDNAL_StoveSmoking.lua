@@ -1,27 +1,8 @@
-require 'client/TimedActions/IDNAL_IsStoveLighting'
-require 'client/TimedActions/IDNAL_IsStoveSmoking'
+require 'TimedActions/IDNAL_IsStoveLighting'
+require 'TimedActions/IDNAL_IsStoveSmoking'
 
 local StoveSmoking = {}
 
-
--- Utilitaires refactorisés
-function IDNALIsValidHeatSource(obj)
-	if not obj then return {valid=false, priority=99} end
-	if obj:getObjectName() == "Stove" and not (instanceof(obj, 'IsoStove') and obj:isMicrowave()) and ((SandboxVars.ElecShutModifier > -1 and getGameTime():getNightsSurvived() < SandboxVars.ElecShutModifier) or obj:getSquare():haveElectricity()) then
-		return {valid=true, duration=100, priority=1}
-	elseif obj:getObjectName() == "Fireplace" and obj:isLit() then
-		return {valid=true, duration=100, priority=2}
-	elseif obj:getObjectName() == "Barbecue" and obj:isLit() then
-		return {valid=true, duration=100, priority=3}
-	elseif obj:getObjectName() == "IsoObject" and obj:getSpriteName() == "camping_01_5" then
-		return {valid=true, duration=120, priority=4}
-	elseif obj:getSquare() and obj:getSquare():haveFire() then
-		return {valid=true, duration=10, priority=5}
-	elseif instanceof(obj, 'IsoStove') and obj:isMicrowave() and ((SandboxVars.ElecShutModifier > -1 and getGameTime():getNightsSurvived() < SandboxVars.ElecShutModifier) or obj:getSquare():haveElectricity()) then
-		return {valid=true, duration=3000, priority=6}
-	end
-	return {valid=false, priority=99}
-end
 
 local function removeSmokingMask(player)
 	local wornItems = player:getWornItems()
@@ -45,7 +26,7 @@ end
 local function startLightingAction(player, source, cigarette)
 	local heat = IDNALIsValidHeatSource(source)
 	if heat.valid then
-		ISTimedActionQueue.add(IsStoveLighting:new(player, source, cigarette, heat.duration))
+		ISTimedActionQueue.add(IsStoveLighting:new(player, source, cigarette))
 		return true
 	end
 	return false
@@ -151,7 +132,7 @@ function IDNALOnStoveSmoking(_player, stove, _cigarette)
 	end
 	-- Fumer
 	if luautils.walkAdj(_player, stove:getSquare(), true) then
-		ISTimedActionQueue.add(IsStoveSmoking:new(_player, stove, _cigarette, 460))
+		ISTimedActionQueue.add(IsStoveSmoking:new(_player, stove, _cigarette))
 	end
 	-- Remettre le masque
 	restoreSmokingMask(_player, removedMask)

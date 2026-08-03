@@ -9,6 +9,13 @@ function IsCarLighting:isValid()
 	return self.character:getInventory():contains(self.item);
 end
 
+function IsCarLighting:getDuration()
+	if self.character:isTimedActionInstant() then
+		return 1;
+	end
+	return 300; -- 3 seconds (1s = 50 cycles)
+end
+
 function IsCarLighting:start()
 	--This bypass the lighter durability drainage
 	self.item:setRequireInHandOrInventory(nil)
@@ -36,15 +43,16 @@ function IsCarLighting:perform()
 	ISBaseTimedAction.perform(self)
 end
 
-function IsCarLighting:new (character, item, time)
-	local o = {}
-	setmetatable(o, self)
-	self.__index = self
-	o.character = character;
+function IsCarLighting:complete()
+	--Battery drain is disabled (B42 API changed)
+	return true
+end
+
+function IsCarLighting:new (character, item)
+	local o = ISBaseTimedAction.new(self, character)
 	o.item = item;
-	o.maxTime = time;
-	if character:isTimedActionInstant() then
-		o.maxTime = 1;
-	end
+	o.maxTime = o:getDuration();
 	return o
 end
+
+
