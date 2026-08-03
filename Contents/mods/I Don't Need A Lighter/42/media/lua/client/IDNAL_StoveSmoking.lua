@@ -114,6 +114,11 @@ Events.OnPreFillWorldObjectContextMenu.Add(LightCigOnStove)
 function IDNALOnStoveSmoking(_player, stove, _cigarette)
 	-- Rendre la fonction accessible globalement (pour _G.OnStoveSmoking)
 	ISWorldObjectContextMenu.Test = true
+		-- If we only have a pack, use the TakeCigarette pipeline
+	if _cigarette:getType() == "CigarettePack" then
+		IDNALStartPackSmoking(_player, _cigarette, stove, false)
+		return
+	end
 	-- Vérification joueur
 	if instanceof(stove, 'IsoPlayer') then
 		if not string.match(stove:getAnimationDebug(), "foodtype : Cigarettes") then return end

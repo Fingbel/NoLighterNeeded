@@ -1,19 +1,35 @@
 --I Don't Need A Lighter Mod by Fingbel
 IDNAL_DEBUG = false
 --This function return an array(duplicate removed) of one of each of the possible smokable items
+--(loose cigarettes, pipes and the usable cigarette pack with the least uses left)
 function IDNALCheckInventoryForCigarette(player)
 	local inventoryItems = player:getInventory():getItems()
 	local smokable = {}
+	local bestPack = nil
+	local bestPackUses = 0
+	local bestPackID = 0
+	
+	--Among all usable packs, keep the one with the lowest uses left
+	--(ties broken by lowest item ID so the selection stays stable)
+	local function considerPack(item)
+		local uses = item:getCurrentUses()
+		if uses and uses > 0 then
+			if not bestPack or uses < bestPackUses or (uses == bestPackUses and item:getID() < bestPackID) then
+				bestPack = item
+				bestPackUses = uses
+				bestPackID = item:getID()
+			end
+		end
+	end
 	
 	--Do we have smokable in our pocket
 	for i=0, inventoryItems:size()-1 do				
-
-        if IDNALIsSmokable(inventoryItems:get(i)) then
-			if inventoryItems:get(i):getType() ~= "CigarettePack" then --We don't want packs in the list
-				smokable[IDNALgetTableSize(smokable)] = inventoryItems:get(i)		
-			end
-					
-		end		
+		local item = inventoryItems:get(i)
+		if item:getType() == "CigarettePack" then
+			considerPack(item)
+		elseif IDNALIsSmokable(item) then
+			smokable[IDNALgetTableSize(smokable)] = item		
+		end				
 	end
 
 	--Now we look for container to search inside
@@ -23,16 +39,41 @@ function IDNALCheckInventoryForCigarette(player)
 			--We look inside each container for smokable
 			local ContainerContent = inventoryItems:get(i):getItemContainer():getItems()				
 			for i=0, ContainerContent:size()-1 do				
-                if IDNALIsSmokable(ContainerContent:get(i)) then
-					if ContainerContent:get(i):getType() ~= "CigarettePack" then --We don't want packs in the list
-						smokable[IDNALgetTableSize(smokable)] = ContainerContent:get(i)		
-					end
+				local item = ContainerContent:get(i)
+				if item:getType() == "CigarettePack" then
+					considerPack(item)
+				elseif IDNALIsSmokable(item) then
+					smokable[IDNALgetTableSize(smokable)] = item
 				end
 			end
 		end
 	end
+	if bestPack then
+		smokable[IDNALgetTableSize(smokable)] = bestPack
+	end
 	if IDNALgetTableSize(smokable) == 0 then return nil end
 	return IDNALremoveDuplicates(smokable)
+end
+
+-- Queue the pack pipeline (client-side only, uses ISTimedActionQueue):
+-- move the pack to the main inventory (vanilla behavior), take one cigarette,
+-- then put the pack back where it was.
+function IDNALStartPackSmoking(player, pack, heatSource, useCar)
+	if not ISTimedActionQueue then return end
+	if not player or not pack then return end
+	if pack:getType() ~= "CigarettePack" then return end
+	if not (pack:getCurrentUses() and pack:getCurrentUses() > 0) then return end
+	
+	local mainInv = player:getInventory()
+	local originalContainer = pack:getContainer()
+	
+	if originalContainer and originalContainer ~= mainInv then
+		ISTimedActionQueue.add(ISInventoryTransferAction:new(player, pack, originalContainer, mainInv, 5))
+		ISTimedActionQueue.add(IDNALTakeCigarette:new(player, heatSource, pack, useCar))
+		ISTimedActionQueue.add(ISInventoryTransferAction:new(player, pack, mainInv, originalContainer, 5))
+	else
+		ISTimedActionQueue.add(IDNALTakeCigarette:new(player, heatSource, pack, useCar))
+	end
 end
 
 

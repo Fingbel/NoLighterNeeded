@@ -93,6 +93,12 @@ end
 --This is the function starting the car smoking sequence
 function OnCarSmoking(_player, _cigarette)
 	
+		--If we only have a pack, use the TakeCigarette pipeline
+	if _cigarette:getType() == "CigarettePack" then
+		IDNALStartPackSmoking(_player, _cigarette, nil, true)
+		return
+	end
+	
 	--Do we need to transfer cigarette from a bag first ? 
 	if _cigarette:getContainer() ~= _player:getInventory() then
 		ISTimedActionQueue.add(ISInventoryTransferAction:new (_player,  _cigarette, _cigarette:getContainer(), _player:getInventory(), 5))
