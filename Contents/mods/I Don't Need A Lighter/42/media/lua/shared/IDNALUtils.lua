@@ -14,10 +14,11 @@ function IDNALCheckInventoryForCigarette(player)
 	local function considerPack(item)
 		local uses = item:getCurrentUses()
 		if uses and uses > 0 then
-			if not bestPack or uses < bestPackUses or (uses == bestPackUses and item:getID() < bestPackID) then
+			local id = item:getID() or 0
+			if not bestPack or uses < bestPackUses or (uses == bestPackUses and id < bestPackID) then
 				bestPack = item
 				bestPackUses = uses
-				bestPackID = item:getID()
+				bestPackID = id
 			end
 		end
 	end

@@ -2,7 +2,6 @@
 -- Handles server -> client commands (Events.OnServerCommand)
 -- The server creates/syncs the cigarette in IDNALTakeCigarette:complete() and
 -- then sends "StartSmokingSequence" so the client can queue the smoke chain
--- with that specific cigarette (ISTimedActionQueue only exists on the client).
 
 local function FindCigaretteInContainer(container, cigID)
     local items = container:getItems()
@@ -61,11 +60,6 @@ local function OnServerCommand(module, command, args)
     if not player then return end
 
     if not TryStartSmokingSequence(player, args) then
-        -- The container sync may lag slightly behind the command: retry each tick
-        -- until the cigarette shows up. (Events.OnTick is a real PZ event, so it
-        -- also keeps the Umbrella/EmmyLUA type-check clean, unlike addTickTimer.)
-        -- In multiplayer the item-add packet and the command are separate UDP
-        -- packets, so allow several seconds of latency (60 ticks = 1s).
         local retries = 0
         local maxRetries = 300 -- up to ~5s
         local function retry()
