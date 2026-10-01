@@ -46,7 +46,7 @@ function IsStoveLighting:start()
 	--This bypass the lighter durability drainage
 	
 	self.item:setRequireInHandOrInventory(nil)
-		if instanceof(self.stove,'IsoStove') then
+	if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
 			toggleStove(self.stove, true)
 			if self.stove:isMicrowave() then
@@ -60,7 +60,7 @@ end
 
 function IsStoveLighting:stop()
 	--StopTimeBasedAction
-		if instanceof(self.stove,'IsoStove') then
+	if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
 			toggleStove(self.stove, false)
 		end
@@ -71,7 +71,7 @@ end
 
 function IsStoveLighting:perform()
 	--FinishTimeBasedAction
-		if instanceof(self.stove,'IsoStove') then
+	if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
 			toggleStove(self.stove, false)
 		end
