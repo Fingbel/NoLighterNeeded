@@ -2,37 +2,6 @@
 -- Smoke option should only be enabled if player has a Fire Source item in inventory or a valid heat source nearby
 require "shared/IDNALUtils"
 
--- Check if player has any fire source in inventory
-local function HasFireSource(player)
-    local inventory = player:getInventory()
-    if not inventory then return false end
-    
-    -- Check for items with START_FIRE tag (lighters, matches, etc.)
-    for i = 0, inventory:getItems():size() - 1 do        
-        local item = inventory:getItems():get(i)
-        if item and item:hasTag(ItemTag.START_FIRE) then            
-            IDNALDebugPrint("Found item with START_FIRE tag: " .. item:getType())
-            return true
-        end        
-    end
-
-    for i=0, inventory:getItems():size()-1 do	
-		if inventory:getItems():get(i):getCategory() == ("Container") then            
-            --We look inside each container for fire source
-            local ContainerContent = inventory:getItems():get(i):getItemContainer():getItems()
-            for j=0, ContainerContent:size()-1 do                
-                local item = ContainerContent:get(j)
-                if item and item:hasTag(ItemTag.START_FIRE) then
-                    IDNALDebugPrint("Found item with START_FIRE tag in container: " .. item:getType())
-                    return true
-                end
-            end
-        end        
-    end
-
-    return false
-end
-
 -- Recherche d'une source de chaleur autour du joueur (rayon 2)
 local function FindNearbyHeatSource(player)
     local square = player:getSquare()
@@ -79,6 +48,39 @@ local function GetFirstItem(items)
     return entry
 end
 
+-- Smoke a loose cigarette using a fire source (lighter/matches) carried in the
+-- player's inventory. Used after a cigarette has been taken out of a pack.
+-- (A CigaretteSingle is a proper Food item, unlike a CigarettePack, so the
+-- vanilla eat action handles it fine.)
+function IDNALOnLighterSmoking(player, cigarette)
+    if not player or not cigarette then return end
+    if ISInventoryPaneContextMenu and ISInventoryPaneContextMenu.eatItem then
+        ISInventoryPaneContextMenu.eatItem(cigarette, 1, player:getPlayerNum())
+    end
+end
+
+-- Returns the first carried item that the game would actually accept to light the
+-- given cigarette, i.e. one whose full type is listed in the cigarette's
+-- RequireInHandOrInventory (lighters, matches, ...). Items that only carry the
+-- START_FIRE tag but are not valid lighters (e.g. a MagnesiumFirestarter) are
+-- therefore ignored, instead of enabling a Smoke option that always fails.
+local function FindSmokingFireSource(player, cigarette)
+    if not player or not cigarette or not cigarette.getRequireInHandOrInventory then return nil end
+    local types = cigarette:getRequireInHandOrInventory()
+    if not types then return nil end
+    local inventory = player:getInventory()
+    if not inventory then return nil end
+    for i = 1, types:size() do
+        local fullType = moduleDotType(cigarette:getModule(), types:get(i - 1))
+        local found = inventory:getFirstTypeRecurse(fullType)
+        if found then
+            IDNALDebugPrint("Found usable fire source: " .. tostring(found:getType()))
+            return found
+        end
+    end
+    return nil
+end
+
 local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
     if not context or not context.options then return end
     local player = getSpecificPlayer(playerIndex)
@@ -90,7 +92,8 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
     if not IDNALIsSmokable(firstItem) then return end
 
    
-    local hasFireSource = HasFireSource(player)
+    local fireSourceItem = FindSmokingFireSource(player, firstItem)
+    local hasFireSource = fireSourceItem ~= nil
     local heatSource = nil
     if _G.IDNALIsValidHeatSource then
         heatSource = FindNearbyHeatSource(player)
@@ -136,31 +139,8 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
             local heatName = IDNALGetHeatSourceLabel(heatSource)
             optionLabel = optionLabel .. " (" .. tostring(heatName) .. ")"
         elseif hasFireSource then
-            -- Chercher le nom de la source de feu utilisée (ex : "Lighter", "Matches")
-            local fireSourceName = nil
-            local inventory = player:getInventory()
-            for i = 0, inventory:getItems():size() - 1 do
-                local item = inventory:getItems():get(i)
-                if item and item:hasTag(ItemTag.START_FIRE) then
-                    fireSourceName = item:getDisplayName() or item:getName() or item:getType()
-                    break
-                end
-            end
-            if not fireSourceName then
-                for i = 0, inventory:getItems():size() - 1 do
-                    if inventory:getItems():get(i):getCategory() == ("Container") then
-                        local ContainerContent = inventory:getItems():get(i):getItemContainer():getItems()
-                        for j = 0, ContainerContent:size() - 1 do
-                            local item = ContainerContent:get(j)
-                            if item and item:hasTag(ItemTag.START_FIRE) then
-                                fireSourceName = item:getDisplayName() or item:getName() or item:getType()
-                                break
-                            end
-                        end
-                        if fireSourceName then break end
-                    end
-                end
-            end
+            -- Name of the valid fire source we will actually use (ex: "Lighter", "Matches")
+            local fireSourceName = fireSourceItem:getDisplayName() or fireSourceItem:getName() or fireSourceItem:getType()
             if fireSourceName then
                 optionLabel = getText('ContextMenu_Smoke') .. " (" .. tostring(fireSourceName) .. ")"
             end
@@ -210,19 +190,25 @@ local function ReplaceVanillaSmokeMenu(playerIndex, context, items)
             tooltip = nil
             notAvailable = false
         elseif hasFireSource then
-            customFunc = function()
-                local smokables = items
-                if type(smokables) ~= "table" or (smokables[1] and smokables[1].items) then
-                    if smokables and #smokables > 0 and type(smokables[1]) == "table" and smokables[1].items then
-                        smokables = smokables[1].items
+            customFunc = function()                
+                local smokable = nil
+                if items and #items > 0 then
+                    if type(items[1]) == "table" and items[1].items then
+                        smokable = items[1].items[1]
                     else
-                        smokables = {smokables}
+                        smokable = items[1]
                     end
                 end
-                for _, smokable in ipairs(smokables) do
-                    if ISInventoryPaneContextMenu and ISInventoryPaneContextMenu.eatItem then
-                        ISInventoryPaneContextMenu.eatItem(smokable, 1, playerIndex)
-                    end
+                if not player or not smokable then return end
+
+                if smokable:getType() == "CigarettePack" then
+                    -- A CigarettePack is not a Food item, so it must never be handed to
+                    -- the vanilla eat action (ISEatFoodAction:getDuration would call a
+                    -- nil getBaseHunger). Take a cigarette out with our own pipeline
+                    -- first; the extracted single cigarette is smoked afterwards.
+                    IDNALStartPackSmoking(player, smokable, nil, false)
+                elseif ISInventoryPaneContextMenu and ISInventoryPaneContextMenu.eatItem then
+                    ISInventoryPaneContextMenu.eatItem(smokable, 1, playerIndex)
                 end
             end
             tooltip = nil

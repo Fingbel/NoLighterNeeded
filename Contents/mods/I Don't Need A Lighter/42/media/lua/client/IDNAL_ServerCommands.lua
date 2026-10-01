@@ -47,6 +47,10 @@ local function TryStartSmokingSequence(player, args)
                 IDNALOnStoveSmoking(player, heatSource, singleCig)
             end
         end
+    elseif args.useLighter then
+        -- No car lighter and no heat source object: smoke the extracted cigarette
+        -- using the fire source (lighter/matches) the player is carrying.
+        IDNALOnLighterSmoking(player, singleCig)
     end
     return true
 end

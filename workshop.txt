@@ -1,6 +1,11 @@
 version=1
 id=2714198296
 title=[B42] I Don't Need A Lighter
+description=[h2] Why thoses updates ? What's new ? Isn't this vanilla now ?[/h2]
+description=The b42 vanilla smoking mechanic has been removed and reworked because i'm not a big fan of the absence of proper TimedAction, Animation and Sound when using the vanilla stoves/car lighter methods added by the devs.
+description=
+description=Now every way of lighting a cigarette (beside with a lighter of course) are handle by the mod directly.
+description=
 description=[h2] What is this mod ? [/h2]
 description=[noparse] So you're telling me that people can't light a cigarette while sitting in front of a campfire or while driving around in a 90's car ? Well this is over with this mod. You now have access to a car-lighter within every car and you can also light a cigarette on any kitchen stove or similar source of flame ![/noparse]
 description=

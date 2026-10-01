@@ -5,6 +5,18 @@ require "TimedActions/ISBaseTimedAction"
 
 IsStoveLighting = ISBaseTimedAction:derive('IsStoveLighting')
 
+-- B42: some IsoStove objects have no primary container, and IsoStove:Toggle()
+-- dereferences it (NPE). Only Toggle() when a container exists; otherwise fall
+-- back to the direct state setter.
+local function toggleStove(stove, desiredState)
+	if not stove or not instanceof(stove, 'IsoStove') then return end
+	if stove:getContainer() then
+		stove:Toggle()
+	else
+		stove:setActivated(desiredState)
+	end
+end
+
 function IsStoveLighting:isValid()
 	return self.character:getInventory():contains(self.item);
 end
@@ -34,9 +46,9 @@ function IsStoveLighting:start()
 	--This bypass the lighter durability drainage
 	
 	self.item:setRequireInHandOrInventory(nil)
-	if instanceof(self.stove,'IsoStove') then
+		if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
-			self.stove:Toggle()
+			toggleStove(self.stove, true)
 			if self.stove:isMicrowave() then
 				self.stove:setTimer(2000) -- Keep it on for 10 seconds to outlast our lighting action
 			end
@@ -48,9 +60,9 @@ end
 
 function IsStoveLighting:stop()
 	--StopTimeBasedAction
-	if instanceof(self.stove,'IsoStove') then
+		if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
-			self.stove:Toggle()
+			toggleStove(self.stove, false)
 		end
 	end
 	ISBaseTimedAction.stop(self);	
@@ -59,9 +71,9 @@ end
 
 function IsStoveLighting:perform()
 	--FinishTimeBasedAction
-	if instanceof(self.stove,'IsoStove') then
+		if instanceof(self.stove,'IsoStove') then
 		if self.initialState == false then
-			self.stove:Toggle()
+			toggleStove(self.stove, false)
 		end
 	end
 	ISBaseTimedAction.perform(self)

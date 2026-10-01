@@ -37,6 +37,14 @@ function IDNALTakeCigarette:perform()
 end
 
 function IDNALTakeCigarette:complete()
+    -- Multiplayer client: the server is authoritative. It performs the item work
+    -- below and then tells us to start the smoke chain (see IDNAL_ServerCommands).
+    -- Doing the work here as well would create a shadow cigarette that no smoke
+    -- action can use, which is why the cigarette was taken but never smoked in MP.
+    if isClient() then
+        return true
+    end
+
     -- Server-authoritative item manipulation (see B42 doc, section 5).
     -- 1) Decrement the pack and sync it to clients.
     if self.pack:getCurrentUses() and self.pack:getCurrentUses() > 0 then
@@ -50,12 +58,24 @@ function IDNALTakeCigarette:complete()
     sendAddItemToContainer(self.character:getInventory(), singleCig)
     local cigID = singleCig:getID()
     
-    if isServer() then
-        -- Multiplayer: tell the client to start the smoking sequence with this cigarette.
+    if self.character:isLocalPlayer() then
+        -- Singleplayer or host: client code is available in this process, start the chain directly.
+        if self.useCar then
+            OnCarSmoking(self.character, singleCig)
+        elseif self.heatSource then
+            IDNALOnStoveSmoking(self.character, self.heatSource, singleCig)
+        else
+            -- No car lighter and no heat source object: smoke the extracted cigarette
+            -- using the fire source (lighter/matches) the player is carrying.
+            IDNALOnLighterSmoking(self.character, singleCig)
+        end
+    else
+        -- Dedicated server: tell the owning client to start the smoking sequence.
         local args = {
             onlineID = self.character:getOnlineID(),
             cigID = cigID,
             useCar = self.useCar,
+            useLighter = not (self.useCar or self.heatSource),
         }
         if self.heatSource then
             local sq = self.heatSource:getSquare()
@@ -67,13 +87,6 @@ function IDNALTakeCigarette:complete()
             }
         end
         sendServerCommand(self.character, "IDNAL", "StartSmokingSequence", args)
-    else
-        -- Singleplayer: client code is available in this process, start the chain directly.
-        if self.useCar then
-            OnCarSmoking(self.character, singleCig)
-        elseif self.heatSource then
-            IDNALOnStoveSmoking(self.character, self.heatSource, singleCig)
-        end
     end
     return true
 end
